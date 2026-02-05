@@ -12,7 +12,7 @@ use Exception;
 class GoogleAuthController extends Controller
 {
     /**
-     * Redirect the user to the Google authentication page.
+     * Redirigir al usuario a la página de autenticación de Google.
      *
      * @return \Illuminate\Http\Response
      */
@@ -22,7 +22,7 @@ class GoogleAuthController extends Controller
     }
 
     /**
-     * Obtain the user information from Google.
+     * Obtener la información del usuario de Google.
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -34,15 +34,15 @@ class GoogleAuthController extends Controller
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if (!$user) {
-                // Register User
+                // Registrar Usuario
                 $user = User::create([
                     'name' => $googleUser->getName(),
                     'email' => $googleUser->getEmail(),
                     'google_id' => $googleUser->getId(),
-                    'password' => null // Google users don't have password initially
+                    'password' => null // Los usuarios de Google no tienen contraseña inicialmente
                 ]);
             } else {
-                // Update google_id if it's missing
+                // Actualizar google_id si falta
                 if (empty($user->google_id)) {
                     $user->update([
                         'google_id' => $googleUser->getId()
@@ -60,7 +60,7 @@ class GoogleAuthController extends Controller
             ]);
 
         } catch (Exception $e) {
-            return response()->json(['error' => 'Google Authentication Failed', 'message' => $e->getMessage()], 401);
+            return response()->json(['error' => 'Fallo en Autenticación con Google', 'message' => $e->getMessage()], 401);
         }
     }
 }

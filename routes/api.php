@@ -15,6 +15,8 @@ Route::group([
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::post('me', [AuthController::class, 'me']);
+        Route::post('change-password', [AuthController::class, 'changePassword']);
+        Route::delete('delete-account', [AuthController::class, 'deleteUser']);
     });
 });
 

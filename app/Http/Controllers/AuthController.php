@@ -12,9 +12,8 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
 
-
     /**
-     * Register a User.
+     * Registrar un Usuario.
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -37,13 +36,13 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'User successfully registered',
+            'message' => 'Usuario registrado exitosamente',
             'user' => $user
         ], 201);
     }
 
     /**
-     * Get a JWT via given credentials.
+     * Obtener un JWT con las credenciales dadas.
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -52,14 +51,14 @@ class AuthController extends Controller
         $credentials = request(['email', 'password']);
 
         if (! $token = auth('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'No autorizado'], 401);
         }
 
         return $this->respondWithToken($token);
     }
 
     /**
-     * Get the authenticated User.
+     * Obtener el Usuario autenticado.
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -69,7 +68,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Log the user out (Invalidate the token).
+     * Cerrar sesión del usuario (Invalidar el token).
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -77,11 +76,64 @@ class AuthController extends Controller
     {
         auth('api')->logout();
 
-        return response()->json(['message' => 'Successfully logged out']);
+        return response()->json(['message' => 'Sesión cerrada exitosamente']);
     }
 
     /**
-     * Refresh a token.
+     * Cambiar la contraseña del usuario.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
+
+        if($validator->fails()){
+            return response()->json($validator->errors()->toJson(), 400);
+        }
+
+        $user = auth('api')->user();
+
+        // Verificar si la contraseña actual coincide
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['error' => 'La contraseña actual es incorrecta'], 400);
+        }
+
+        // Actualizar contraseña
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Contraseña actualizada correctamente']);
+    }
+
+    /**
+     * Eliminar la cuenta del usuario autenticado.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteUser()
+    {
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+
+        // Invalidar token antes de eliminar
+        auth('api')->logout();
+
+        // Eliminar usuario
+        $user->delete();
+
+        return response()->json(['message' => 'Cuenta de usuario eliminada correctamente']);
+    }
+
+    /**
+     * Refrescar un token.
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -91,7 +143,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Get the token array structure.
+     * Obtener la estructura del array del token.
      *
      * @param  string $token
      *
