@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cliente WebSocket - VRIV</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 5px;
+            margin: 5px 0;
+            border-left: 3px solid #007bff;
+            padding-left: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Cliente de Prueba WebSocket</h1>
+        
+        <div id="status" class="status disconnected">
+            ❌ Desconectado
+        </div>
+
+        <div>
+            <h3>Autenticación</h3>
+            <input type="number" id="userId" placeholder="ID de Usuario" value="2">
+            <button onclick="authenticate()">Autenticar</button>
+        </div>
+
+        <div>
+            <h3>Unirse a Evento</h3>
+            <input type="number" id="eventoId" placeholder="ID de Evento" value="1">
+            <button onclick="joinEvento()">Unirse</button>
+            <button onclick="leaveEvento()">Salir</button>
+        </div>
+
+        <h3>📋 Log de Eventos</h3>
+        <div id="log" class="log">
+            <div class="log-entry">Esperando conexión...</div>
+        </div>
+
+        <button onclick="clearLog()">Limpiar Log</button>
+    </div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3000');
+        const statusDiv = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.style.borderLeftColor = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        socket.on('connect', () => {
+            statusDiv.className = 'status connected';
+            statusDiv.textContent = '✅ Conectado - Socket ID: ' + socket.id;
+            addLog('Conectado al servidor WebSocket', 'success');
+        });
+
+        socket.on('disconnect', () => {
+            statusDiv.className = 'status disconnected';
+            statusDiv.textContent = '❌ Desconectado';
+            addLog('Desconectado del servidor', 'error');
+        });
+
+        // Escuchar eventos personalizados
+        socket.on('evento-finalizado', (data) => {
+            addLog('🏁 Evento Finalizado: ' + JSON.stringify(data), 'success');
+        });
+
+        socket.on('evento-actualizado', (data) => {
+            addLog('🔄 Evento Actualizado: ' + JSON.stringify(data), 'success');
+        });
+
+        socket.on('nuevo-ganador', (data) => {
+            addLog('🏆 Nuevo Ganador: ' + JSON.stringify(data), 'success');
+        });
+
+        socket.on('nueva-notificacion', (data) => {
+            addLog('🔔 Nueva Notificación: ' + JSON.stringify(data), 'success');
+        });
+
+        function authenticate() {
+            const userId = document.getElementById('userId').value;
+            socket.emit('authenticate', parseInt(userId));
+            addLog(`Autenticado como usuario ${userId}`);
+        }
+
+        function joinEvento() {
+            const eventoId = document.getElementById('eventoId').value;
+            socket.emit('join-evento', parseInt(eventoId));
+            addLog(`Unido a evento ${eventoId}`);
+        }
+
+        function leaveEvento() {
+            const eventoId = document.getElementById('eventoId').value;
+            socket.emit('leave-evento', parseInt(eventoId));
+            addLog(`Salió del evento ${eventoId}`);
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
